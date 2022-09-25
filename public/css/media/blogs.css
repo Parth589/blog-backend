@@ -1,0 +1,31 @@
+@media screen and (max-width:740px) {
+
+    /* * making all cards compact */
+    .blog-card-sqr,
+    .blog-card-flat {
+        grid-column: span 1;
+        grid-row: span 2;
+    }
+
+    .blog-card-sqr {
+        aspect-ratio: unset;
+        grid-row: span 2;
+    }
+
+    .blog-card-flat {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        align-content: start;
+        gap: 1rem;
+    }
+
+    .blog-card-flat .blog-card__thumbnail-outer {
+        /* width: 100%; */
+        flex-basis: unset;
+    }
+
+    .blog-card-flat .blog-card__thumbnail {
+        /* aspect-ratio: 1; */
+        width: 100%;
+    }
+}

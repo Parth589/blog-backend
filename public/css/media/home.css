@@ -1,0 +1,25 @@
+@media screen and (max-width:850px) {
+    .main-animation-outer {
+        padding-inline: 70px;
+    }
+}
+
+@media screen and (max-width:650px) {
+    .main-animation-outer {
+        padding-inline: 0px;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .main-animation {
+        margin-inline: 0;
+    }
+
+    .font-bg {
+        font-size: 2.3rem;
+    }
+
+    .font-md {
+        font-size: 1.1rem;
+    }
+}
