@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('./partials/head',{mediaCSS_link,regularCSS_link, title}) %>
+
+    <body>
+        <%- include('./partials/header') %>
+            <%- include('./content',{content}) %>
+    </body>
+
+    <%- include('./partials/customJS',{style_JS_link,regular_JS_link}) %>
+
+</html>

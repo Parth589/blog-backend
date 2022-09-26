@@ -7,4 +7,7 @@
     - API integration 
     - Authantication
 - Databse
-    - Not even started yet
+    - implement Authentication related schema 
+
+
+(*UPDATE : authentication and authorization related part will be done later.)

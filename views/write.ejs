@@ -1,0 +1,30 @@
+<main class="flex-col-center gap-bg">
+    <form class="form-outer flex-col-center gap-bg" action="/main.php">
+        <div class="flex-col-center gap-bg" id="first-form">
+
+            <input type="text" name="title" id="title" placeholder="Title" class="font-bg" required>
+            <textarea name="content" id="content" cols="30" rows="10" class="font-md" placeholder="Tell your story..."
+                required></textarea>
+        </div>
+        <div class="flex-col-up gap-bg final-form-outer vanish" id="second-form">
+            <div class="final-form flex-col-up gap-md font-sm-2">
+                <div class="keyword-form flex-col-up gap-sm-2">
+                    <label for="keywords">Add Topics</label>
+                    <input type="text" id="keywords" placeholder="Maximum 5 (comma seperated)" required>
+                </div>
+
+
+                <div class="thumbnail-form flex-col-up gap-sm-2">
+                    <input type="text" id="thumbnail" placeholder="Add Thumbnail link (*optional)" class="text-regular">
+                </div>
+            </div>
+        </div>
+        <div class=" flex-row-sb btn-container">
+            <button class="reset-btn" id="resetBtn" type="reset">
+                <img src="/assets/arrow-repeat.svg" alt="reset" class="icon-md-2">
+            </button>
+            <input type="button" value="Next" id="submitBtn" class="next-btn">
+        </div>
+    </form>
+
+</main>
