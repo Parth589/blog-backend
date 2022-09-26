@@ -7,10 +7,10 @@ const serverRouter = require('./router/server');
 const connectDB = require('./db/connect');
 require('dotenv').config();
 app.set('view-engine', 'ejs');
-
-if (process.env.DOMAIN === "false") {
+var domain = process.env.DOMAIN;
+if (domain === "ip") {
     // info: to setup server without a domain
-    var ip = require('ip').address(undefined, 'ipv4');
+    domain = require('ip').address(undefined, 'ipv4');
 }
 
 // * middlewares
@@ -22,11 +22,14 @@ app.use(express.static('public/static'));
 app.use('/api/v1/blogs', blogRouter);
 app.use('/', serverRouter);
 
+// * Error-control
+const errorHandler = require('./error/errorHandler');
+app.use(errorHandler);
 // * Execution flow
 const start = async () => {
     await connectDB(process.env.MONGO_URI);
 };
 start();
-app.listen(PORT, ip || 'localhost', () => {
-    console.log('server started at port ' + PORT, ip);
+app.listen(PORT, domain, () => {
+    console.log(`server started at http://${domain}:${PORT}`);
 });

@@ -5,7 +5,7 @@ const VALIDATE_ID = (id) => {
     // validation of mongodb's _id
     return id.match(/^[0-9a-fA-F]{24}$/);
 };
-
+const converter = require('../libraries/showdown');
 const filterObjectsByKeyRegEx = (obj, filterKeys) => {
 
     // all keys other than filterKeys would be rejected and final object will be returned
@@ -48,8 +48,10 @@ const getOneBlog = async (req, res, next) => {
 const cerateBlog = async (req, res, next) => {
     // create a new blog (data would be sent via post request)
     try {
-        const body = req.body;
-        if (Object.hasOwn(body, '_id')) throw new Error('You cant add _id manually');
+        let body = req.body;
+        const a = ['keywords', 'title', 'author', 'content', 'brief', 'thumbnail_link'];
+        body = filterObjectsByKey(req.body, a);
+        body.content = converter.makeHtml(body.content);
         let data = await model.create(body);
         data = data.toJSON();
         res.status(200).json({ success: true, data });
@@ -107,7 +109,6 @@ const filterObjectsByKey = (obj, filterKeys) => {
 
     const res = {};
     filterKeys.forEach((e) => {
-        console.log(e);
         if (obj[e]) {
             res[e] = obj[e];
             console.log(e);
