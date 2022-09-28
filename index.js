@@ -6,7 +6,7 @@ const blogRouter = require('./router/api');
 const serverRouter = require('./router/server');
 const connectDB = require('./db/connect');
 require('dotenv').config();
-app.set('view-engine', 'ejs');
+app.set('view engine', 'ejs');
 var domain = process.env.DOMAIN;
 if (domain === "ip") {
     // info: to setup server without a domain

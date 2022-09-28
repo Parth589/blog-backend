@@ -33,7 +33,7 @@ const OBJwrite = {
 
 const home = async (req, res, next) => {
     try {
-        res.render('index.ejs', OBJhome);
+        res.render('index', OBJhome);
     } catch (error) {
         console.log(error);
         res.status(500).send('Internal server error');
@@ -41,7 +41,7 @@ const home = async (req, res, next) => {
 };
 const blogs = async (req, res, next) => {
     try {
-        res.render('index.ejs', OBJblogs);
+        res.render('index', OBJblogs);
     } catch (error) {
         console.log(error);
         res.status(500).send('Internal server error');
@@ -49,7 +49,7 @@ const blogs = async (req, res, next) => {
 };
 const write = async (req, res, next) => {
     try {
-        res.render('index.ejs', OBJwrite);
+        res.render('index', OBJwrite);
     } catch (error) {
         console.log(error);
         res.status(500).send('Internal server error');
@@ -57,7 +57,7 @@ const write = async (req, res, next) => {
 };
 const blog = async (req, res, next) => {
     try {
-        res.render('index.ejs', OBJblog);
+        res.render('index', OBJblog);
     } catch (error) {
         console.log(error);
         res.status(500).send('Internal server error');
