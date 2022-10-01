@@ -124,11 +124,16 @@ main {
     object-fit: cover;
 }
 
+.content-wrapper-outer {
+    align-items: start;
+    justify-content: start;
+    overflow-y: scroll;
+    height: calc(100vh - 70px);
+}
+
 .content-wrapper {
     padding: 2rem;
     flex-wrap: wrap;
-    overflow-y: scroll;
-    height: calc(100vh - 70px);
     align-items: start;
     justify-content: start;
     width: 100%;
@@ -136,7 +141,6 @@ main {
 
 .load-outer {
     width: 100%;
-
 }
 
 .load-outer * {
