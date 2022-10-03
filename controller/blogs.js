@@ -21,9 +21,10 @@ const filterObjectsByKeyRegEx = (obj, filterKeys) => {
 
 const getFewBlogs = async (_req, res, next) => {
     // send blogs without their content field
-    const LIMIT = 15;
+    const LIMIT = 3;
     try {
-        const data = await model.find({}, { "content": 0 }).limit(LIMIT);
+        // const data = await model.find({}, { "content": 0 }).limit(LIMIT);
+        const data = await model.aggregate([{ $sample: { size: LIMIT } }]);
         return res.status(200).json({ success: true, data });
     } catch (error) {
         console.log(error);
@@ -52,6 +53,9 @@ const cerateBlog = async (req, res, next) => {
         const a = ['keywords', 'title', 'author', 'content', 'brief', 'thumbnail_link'];
         body = filterObjectsByKey(req.body, a);
         body.content = converter.makeHtml(body.content);
+        if (!body.thumbnail_link) {
+            body.thumbnail_link = `https://source.unsplash.com/random/?${String(body.keywords).replace(',', '&')}`;
+        }
         let data = await model.create(body);
         data = data.toJSON();
         res.status(200).json({ success: true, data });
@@ -127,6 +131,9 @@ const updateBlog = async (req, res, next) => {
         const a = ['keywords', 'title', 'author', 'content', 'brief', 'thumbnail_link'];
         const newObject = filterObjectsByKey(req.body, a);// user can search on these feilds
         console.log('query is :', newObject);
+        if (newObject.content)
+            newObject.content = converter.makeHtml(newObject.content);
+
         const data = await model.findByIdAndUpdate(req.params.id, newObject, { new: true });
         if (data)
             return res.status(200).json({ success: true, data });

@@ -27,8 +27,40 @@ reset.addEventListener('click', () => {
 });
 // * publish button functionality
 if (!sbmtBtn) console.error('Cant found submit button');
-const publish = () => {
+const publish = async () => {
     console.log('publishing the current blog...');
+
+    //generate object to send it.
+    const object = {
+        "title": document.getElementById('title').value,
+        "author": 'Unknown',
+        "content": document.getElementById('content').value,
+        "keywords": document.getElementById('keywords').value.split(','),
+        "thumbnail_link": document.getElementById('thumbnail').value,
+        "brief": document.getElementById('brief').value,
+    };
+
+    // send the object to create a blog
+    const response = await fetch("/api/v1/blogs", {
+
+        // Adding method type
+        method: "POST",
+
+        // Adding body or contents to send
+        body: JSON.stringify(object),
+
+        // Adding headers to the request
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    });
+    const data = await response.json();
+    if (data.success) {
+        popUp('Blog published successfully');
+    }
+    else
+        popUp('some error occured');
+
 };
 sbmtBtn.addEventListener('click', (e) => {
     e.preventDefault();

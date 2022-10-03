@@ -7,7 +7,7 @@ const generateRegularCard = (data) => {
                     class="thumbnail">
             </div>
             <div class="txt flex-col-up gap-sm-2">
-                <em class="font-sm-2 text-regular">${data.keywords}</em>
+                <em class="font-sm-2 text-regular">${String(data.keywords).replaceAll(',', ' ')}</em>
 
                 <h1 class="title text-imp font-md">${data.title.slice(0, 50)}</h1>
                 <span class="brief text-regular font-sm-2">${data.brief.slice(0, 100)}</span>
