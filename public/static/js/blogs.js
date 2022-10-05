@@ -25,6 +25,11 @@ const renderBlogs = (array) => {
         container.appendChild(element);
     });
 };
+
+const clearContainer = () => {
+    container.innerHTML = '';
+};
+
 const retriveAndRender = async () => {
     const response = await fetch('/api/v1/blogs');
     const data = await response.json();
@@ -55,12 +60,26 @@ document.getElementById('toggle').addEventListener('click', () => {
 
 // search functionality
 const search = async (term) => {
-    const response = await fetch('/api/v1/blogs/search', {
-        method: 'POST',
-        body: {
-            keywords: term.trim()
-        }
+    term = term.trim();
+    term = term.split(' ');
+    let query = '';
+    term.forEach((e) => {
+        query += 'keywords=' + e + '&';
     });
+    console.log(`/api/v1/blogs/search?${query}`);
+    const response = await fetch(`/api/v1/blogs/search?${query}`);
     const data = await response.json();
-    renderBlogs(data);
+    if (data.success) {
+        clearContainer();
+        renderBlogs(data.data);
+    }
+    console.log(data);
 };
+
+const search_btn = document.getElementById('search-btn');
+search_btn.addEventListener('click', () => {
+    const keyword = document.getElementById('search').value.trim();
+    if (keyword)
+        search(keyword);
+    document.getElementById('search').value = '';
+});

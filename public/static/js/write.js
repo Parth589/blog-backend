@@ -55,8 +55,10 @@ const publish = async () => {
         }
     });
     const data = await response.json();
+    console.log(data);
     if (data.success) {
         popUp('Blog published successfully');
+        reset.click();
     }
     else
         popUp('some error occured');

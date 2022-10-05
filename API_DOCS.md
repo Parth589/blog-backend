@@ -47,6 +47,7 @@ Example response
   }
 }
 ```
+### creating a post,
 
 `POST /api/v1/blogs/`
 
@@ -67,8 +68,11 @@ Example response
     __v: 0
   }
 }
+
+
 ```
-`GET /api/v1/blogs/search?keywords=javascript&title=something&author=anny`
+### searching for posts,
+`GET /api/v1/blogs/search?keywords=javascript&title=something&author=anny&fullobject=false&limit=10`
 
 Example response
 
@@ -142,6 +146,8 @@ Example response
   ]
 }
 ```
+### deleting a post,
+
 `DELETE /api/v1/blogs/:id`
 
 Example response
@@ -165,6 +171,9 @@ Example response
   }
 }
 ```
+
+### updating some or all field of a post,
+
 
 `PATCH /api/v1/blogs/:id`
 

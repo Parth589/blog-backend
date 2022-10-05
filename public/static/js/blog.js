@@ -8,6 +8,11 @@ const start = async () => {
     const data = await response.json();
     if (data.success) {
         console.log(data);
+        // rendering keywords in html page
+        const topics_wrapper = document.getElementById('topics-wrapper');
+        data.data.keywords.forEach((e) => {
+            topics_wrapper.innerHTML += `<li>${e}</li>`;
+        });
         renderContent(data.data.content);
         document.getElementById('blog-title').innerText = data.data.title;
         if (data.data.thumbnail_link)

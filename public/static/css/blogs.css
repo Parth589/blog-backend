@@ -1,3 +1,7 @@
+body {
+    overflow-y: hidden;
+}
+
 main {
     align-items: start !important;
     height: calc(100vh - 70px);
@@ -119,7 +123,7 @@ main {
 .card .thumbnail {
     width: 100%;
     aspect-ratio: 10/6;
-    background-color: lime;
+    background-color: var(--clr-primary-dark);
     transition: filter .5s;
     object-fit: cover;
 }

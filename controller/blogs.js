@@ -1,4 +1,5 @@
-const { Error } = require('mongoose');
+const { query } = require('express');
+const fetch = require('node-fetch');
 const model = require('../db/model/blogs');
 
 const VALIDATE_ID = (id) => {
@@ -12,8 +13,16 @@ const filterObjectsByKeyRegEx = (obj, filterKeys) => {
 
     const res = {};
     filterKeys.forEach((e) => {
-        if (obj[e])
+        if (obj[e] && typeof obj[e] === 'string')
             res[e] = new RegExp(obj[e], 'i');
+        if (Array.isArray(obj[e])) {
+            obj[e].forEach((element) => {
+                if (typeof element === 'string') {
+                    element = new RegExp(element, 'i');
+                }
+            });
+            res[e] = obj[e];
+        }
     });
     return res;
 
@@ -23,8 +32,7 @@ const getFewBlogs = async (_req, res, next) => {
     // send blogs without their content field
     const LIMIT = 3;
     try {
-        // const data = await model.find({}, { "content": 0 }).limit(LIMIT);
-        const data = await model.aggregate([{ $sample: { size: LIMIT } }]);
+        const data = await model.aggregate([{ $sample: { size: LIMIT } }]).project({ content: 0 });
         return res.status(200).json({ success: true, data });
     } catch (error) {
         console.log(error);
@@ -54,7 +62,18 @@ const cerateBlog = async (req, res, next) => {
         body = filterObjectsByKey(req.body, a);
         body.content = converter.makeHtml(body.content);
         if (!body.thumbnail_link) {
+            // generate a random image to use it as thumbnail of blog post
             body.thumbnail_link = `https://source.unsplash.com/random/?${String(body.keywords).replace(',', '&')}`;
+            const response = await fetch(body.thumbnail_link);
+            body.thumbnail_link = response.url.split('?')[0];
+        }
+        else {
+            // check if provided link is valid or not
+            const response = await fetch(body.thumbnail_link);
+            console.log(response.headers);
+            if (!response.headers.get('content-type').includes('image')) {
+                throw new Error('Provided image link is not valid');
+            }
         }
         let data = await model.create(body);
         data = data.toJSON();
@@ -62,7 +81,6 @@ const cerateBlog = async (req, res, next) => {
     } catch (error) {
         console.log(error);
         return res.status(400).json({ success: false, message: error.message });
-        next();
     }
 };
 const deleteBlog = async (req, res, next) => {
@@ -78,6 +96,7 @@ const deleteBlog = async (req, res, next) => {
         next();
     }
 };
+
 const searchBlog = async (req, res, next) => {
     // Search blogs using their keywords, title or author (multiple feilds also can be specified)
     try {
@@ -85,18 +104,21 @@ const searchBlog = async (req, res, next) => {
         let fullObject = false;
         if (req.query['fullObject'])
             fullObject = true;
-
         const q = filterObjectsByKeyRegEx(req.query, a);// user can search on these feilds
-        console.log('query is :',
-            q);
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 20;
+
+        console.log('search query is :', q);
         if (fullObject) {
-            const data = await model.find({ $or: [{ keywords: q.keywords }, { title: q.title }, { author: q.author }] });
+            const data = await model.find({ $or: [{ keywords: { $in: q.keywords } }, { title: q.title }, { author: q.author }] })
+                .skip((page - 1) * limit).limit(limit);
             if (data)
                 return res.status(200).json({ success: true, data });
             return res.status(404).json({ success: false, data });
         }
         else {
-            const data = await model.find({ $or: [{ keywords: q.keywords }, { title: q.title }, { author: q.author }] }, { content: 0 });
+            const data = await model.find({ $or: [{ keywords: { $in: q.keywords } }, { title: q.title }, { author: q.author }] }, { content: 0 })
+                .skip((page - 1) * limit).limit(limit);
             if (data)
                 return res.status(200).json({ success: true, data });
             return res.status(404).json({ success: false, data });
@@ -115,7 +137,6 @@ const filterObjectsByKey = (obj, filterKeys) => {
     filterKeys.forEach((e) => {
         if (obj[e]) {
             res[e] = obj[e];
-            console.log(e);
         }
     });
     return res;
@@ -143,12 +164,12 @@ const updateBlog = async (req, res, next) => {
         next();
     }
 };
+
 module.exports = {
     getFewBlogs,
     getOneBlog,
     cerateBlog,
     searchBlog,
     deleteBlog,
-    updateBlog
+    updateBlog,
 };
-

@@ -1,15 +1,9 @@
-:root {
-    font-size: 11px;
-}
-
-@media screen and (min-width:600px) {
-    :root {
-        font-size: 13px;
+@media screen and (max-width:600px) {
+    #blog-title {
+        font-size: 2rem;
     }
-}
 
-@media screen and (min-width: 1000px) {
-    :root {
-        font-size: 16px;
+    .exception {
+        font-size: .88em;
     }
 }
