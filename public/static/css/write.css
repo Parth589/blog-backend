@@ -67,3 +67,106 @@ main {
     cursor: pointer;
     align-self: flex-end;
 }
+
+#first-form {
+    position: relative;
+}
+
+.first-form__preview-toggle-btn {
+    outline: 2px solid var(--clr-secondary-dark);
+    padding: .5rem 1rem;
+    border-radius: 5px;
+    width: 100px;
+    cursor: pointer;
+}
+
+#first-form[preview-mode="true"] .first-form__preview-container {
+    display: unset;
+}
+
+#first-form[preview-mode="true"] #title,
+#first-form[preview-mode="true"] #content {
+    display: none;
+}
+
+.first-form__preview-container {
+    display: none;
+    width: 700px;
+    max-width: 90vw;
+}
+
+
+/* styles for preview content */
+#blog-title {
+    font-size: 3rem;
+}
+
+.exception {
+    font-size: 1.3em;
+}
+
+.exception * {
+    all: revert;
+}
+
+.exception blockquote {
+    font-size: 1.4em;
+    width: 60%;
+    margin: 10px auto;
+    font-family: serif;
+    font-style: italic;
+    color: #555555;
+    padding: 1em 0px 1em 75px;
+    border-left: 8px solid var(--clr-primary-grn);
+    line-height: 1.6;
+    position: relative;
+    background: #EDEDED;
+    font-weight: lighter;
+}
+
+.exception blockquote::before {
+    font-family: Arial;
+    content: "\201C";
+    color: var(--clr-primary-grn);
+    font-size: 4em;
+    position: absolute;
+    left: 10px;
+    top: -10px;
+}
+
+.exception blockquote::after {
+    content: '';
+}
+
+.exception blockquote span {
+    display: block;
+    color: #333333;
+    font-style: normal;
+    /* font-weight: bold; */
+    margin-top: 1rem;
+    font-family: sans-serif;
+}
+
+.exception code {
+    --color-code-background: var(--clr-primary-dark);
+    --color-code-color: var(--clr-secondary-light);
+    background-color: var(--color-code-background);
+    color: var(--color-code-color);
+    border-radius: 0.3rem;
+    padding: 4px 5px 5px;
+    white-space: nowrap;
+}
+
+.exception blockquote span {
+    display: block;
+    color: #333333;
+    font-style: normal;
+    /* font-weight: bold; */
+    margin-top: 1rem;
+    font-family: sans-serif;
+}
+
+.exception a {
+    text-decoration: underline;
+    color: var(--clr-primary-grn);
+}
