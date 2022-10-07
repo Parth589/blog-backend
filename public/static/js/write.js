@@ -1,3 +1,4 @@
+
 const sbmtBtn = document.getElementById('submitBtn');
 
 // * uility function
@@ -8,7 +9,7 @@ const getTo1stForm = () => {
     sbmtBtn.setAttribute('type', 'button');
     sbmtBtn.classList.remove('sbmt-btn');
     sbmtBtn.classList.add('next-btn');
-
+    first_form.setAttribute('preview-mode', false);
 };
 const getTo2ndForm = () => {
     document.getElementById('first-form').classList.add('vanish');
@@ -78,5 +79,46 @@ sbmtBtn.addEventListener('click', (e) => {
     else {
         console.error('Something went wrong... reload the page');
         popUp('Something went wrong, Reload the page');
+    }
+});
+
+
+// preview content logic
+
+var converter = new showdown.Converter();
+const preview_container = document.getElementById('preview-container');
+const loadPreview = text => {
+    console.log(text);
+    html = converter.makeHtml(text);
+    preview_container.innerHTML = `<h1 id="blog-title">${document.getElementById('title').value}</h1>` + html;
+};
+
+const toggle_btn = document.getElementById('preview-toggle-btn');
+const first_form = document.getElementById('first-form');
+const text_container = document.getElementById('content');
+
+toggle_btn.addEventListener('click', () => {
+    const prev = first_form.getAttribute('preview-mode');
+    if (prev === 'true') {
+        first_form.setAttribute('preview-mode', false);
+    } else {
+        first_form.setAttribute('preview-mode', true);
+        loadPreview(text_container.value);
+    }
+});
+
+text_container.addEventListener('keydown', function (e) {
+    if (e.key == 'Tab') {
+        e.preventDefault();
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+
+        // set textarea value to: text before caret + tab + text after caret
+        this.value = this.value.substring(0, start) +
+            "\t" + this.value.substring(end);
+
+        // put caret at right position again
+        this.selectionStart =
+            this.selectionEnd = start + 1;
     }
 });

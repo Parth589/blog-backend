@@ -6,4 +6,12 @@
     .font-md {
         font-size: 1.2rem;
     }
+
+    .exception {
+        font-size: .88em;
+    }
+
+    #blog-title {
+        font-size: 2rem;
+    }
 }

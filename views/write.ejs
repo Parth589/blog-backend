@@ -1,10 +1,11 @@
 <main class="flex-col-center gap-bg">
-    <form class="form-outer flex-col-center gap-bg" action="/main.php">
-        <div class="flex-col-center gap-bg" id="first-form">
-
+    <form class="form-outer flex-col-center gap-bg">
+        <div class="flex-col-center gap-bg" id="first-form" preview-mode="false">
+            <div class="first-form__preview-container exception" id="preview-container"></div>
             <input type="text" name="title" id="title" placeholder="Title" class="font-bg" required>
-            <textarea name="content" id="content" cols="30" rows="10" class="font-md" placeholder="Tell your story..."
-                required></textarea>
+            <textarea id="content" class="font-md" placeholder="Tell your story..." required></textarea>
+            <img src="/assets/preview.svg" alt="toggle-preview" class="first-form__preview-toggle-btn"
+                id="preview-toggle-btn">
         </div>
         <div class="flex-col-up gap-bg final-form-outer vanish" id="second-form">
             <div class="final-form flex-col-up gap-md font-sm-2">
@@ -35,3 +36,7 @@
     </form>
 
 </main>
+<!-- ik it's not a god idea to put script directly here, but i will fix it -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"
+    integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
