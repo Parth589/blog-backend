@@ -61,13 +61,8 @@ document.getElementById('toggle').addEventListener('click', () => {
 // search functionality
 const search = async (term) => {
     term = term.trim();
-    term = term.split(' ');
-    let query = '';
-    term.forEach((e) => {
-        query += 'keywords=' + e + '&';
-    });
-    console.log(`/api/v1/blogs/search?${query}`);
-    const response = await fetch(`/api/v1/blogs/search?${query}`);
+    console.log(`/api/v1/blogs/search?searchTerm=${term}`);
+    const response = await fetch(`/api/v1/blogs/search?searchTerm=${term}`);
     const data = await response.json();
     if (data.success) {
         clearContainer();
@@ -78,7 +73,7 @@ const search = async (term) => {
 
 const search_btn = document.getElementById('search-btn');
 search_btn.addEventListener('click', () => {
-    const keyword = document.getElementById('search').value.trim();
+    const keyword = document.getElementById('search').value;
     if (keyword)
         search(keyword);
     document.getElementById('search').value = '';

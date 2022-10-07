@@ -72,7 +72,7 @@ Example response
 
 ```
 ### searching for posts,
-`GET /api/v1/blogs/search?keywords=javascript&title=something&author=anny&fullobject=false&limit=10`
+`GET /api/v1/blogs/search?searchTerm=javascript something anny&fullobject=false&limit=10`
 
 Example response
 
@@ -140,7 +140,7 @@ Example response
       keywords: [
         'javascript'
       ],
-      author: 'p4rth',
+      author: 'anny',
       __v: 0
     }
   ]
