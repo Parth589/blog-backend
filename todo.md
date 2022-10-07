@@ -2,7 +2,6 @@
 - Frontend 
     - make home page animation more smooth
     - add option to delete a blog
-    - searching a blog is not implemented
     - updating a blog is not implemented 
 - Backend
     - Authantication

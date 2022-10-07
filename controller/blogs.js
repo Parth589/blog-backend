@@ -100,24 +100,26 @@ const deleteBlog = async (req, res, next) => {
 const searchBlog = async (req, res, next) => {
     // Search blogs using their keywords, title or author (multiple feilds also can be specified)
     try {
-        const a = ['keywords', 'title', 'author'];
         let fullObject = false;
         if (req.query['fullObject'])
             fullObject = true;
-        const q = filterObjectsByKeyRegEx(req.query, a);// user can search on these feilds
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 20;
-
-        console.log('search query is :', q);
+        const searchTerm = req.query['searchTerm'];
+        console.log('search query is :', req.query);
+        const q = searchTerm.split(' ');
+        q.forEach(e => {
+            e = new RegExp(e, 'i');
+        });
         if (fullObject) {
-            const data = await model.find({ $or: [{ keywords: { $in: q.keywords } }, { title: q.title }, { author: q.author }] })
+            const data = await model.find({ $or: [{ keywords: { $in: q } }, { title: { $in: q } }, { author: { $in: q } }] })
                 .skip((page - 1) * limit).limit(limit);
             if (data)
                 return res.status(200).json({ success: true, data });
             return res.status(404).json({ success: false, data });
         }
         else {
-            const data = await model.find({ $or: [{ keywords: { $in: q.keywords } }, { title: q.title }, { author: q.author }] }, { content: 0 })
+            const data = await model.find({ $or: [{ keywords: { $in: q } }, { title: { $in: q } }, { author: { $in: q } }] }, { content: 0 })
                 .skip((page - 1) * limit).limit(limit);
             if (data)
                 return res.status(200).json({ success: true, data });
