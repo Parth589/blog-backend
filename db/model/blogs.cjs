@@ -16,16 +16,6 @@ const schema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    brief: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    thumbnail_link: {
-        type: String,
-        default: null,
-        trim: true
-    },
     keywords: {
         type: [{ type: String, trim: true, required: true, lowercase: true }],
         required: true,

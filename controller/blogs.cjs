@@ -1,5 +1,3 @@
-const { query } = require('express');
-const fetch = require('node-fetch');
 const model = require('../db/model/blogs');
 
 const VALIDATE_ID = (id) => {
@@ -110,6 +108,10 @@ const searchBlog = async (req, res, next) => {
         const q = searchTerm.split(' ');
         q.forEach(e => {
             e = new RegExp(e, 'i');
+        });
+        console.log('query object is :');
+        q.forEach(e => {
+            console.log(e);
         });
         if (fullObject) {
             const data = await model.find({ $or: [{ keywords: { $in: q } }, { title: { $in: q } }, { author: { $in: q } }] })
