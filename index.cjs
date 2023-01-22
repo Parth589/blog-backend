@@ -3,8 +3,10 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const connectDB=require('./db/connect.cjs');
-require('dotenv').config();
-app.set('view engine', 'ejs');
+require('dotenv').config(); // to load .env file on startup
+
+
+
 let domain = process.env.DOMAIN;
 if (domain === "ip") {
     // info: to set up server without a domain
@@ -12,7 +14,7 @@ if (domain === "ip") {
 }
 
 // * middlewares
-app.use(express.json());
+app.use(express.json()); // to translate JSON data sent from POST request
 app.use(express.urlencoded({extended: false}));
 
 // * Routers
@@ -22,6 +24,8 @@ app.use('/', mainRouter);
 // * Error-control
 const errorHandler = require('./error/errorHandler.cjs');
 app.use(errorHandler);
+
+
 // * Execution flow
 const start = async () => {
     await connectDB(process.env.MONGO_URI);

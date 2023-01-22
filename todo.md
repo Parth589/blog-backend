@@ -4,8 +4,8 @@
     - add option to delete a blog
     - updating a blog is not implemented 
 - Backend
-    - Authantication
-- Databse
+    - Authentication
+- Database
     - implement Authentication related schema 
 
 

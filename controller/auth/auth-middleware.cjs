@@ -38,8 +38,6 @@ const authorize = async (req, res, next) => {
     }
     try {
         const decode = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET_KEY);
-        console.log({decode});
-        console.log("Inside authorize");
         // check if the user exist on database or not;
         if ((await userModel.find({mail: decode.id})).length !== 1) {
             return res.status(401).json({msg: 'User not found'});
@@ -53,6 +51,24 @@ const authorize = async (req, res, next) => {
     }
 };
 
+// * this utility function checks if the request is made by authorized user or not
+const isAuthorized = async (req) => {
+    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
+        return false;
+    }
+    try {
+        const decode = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET_KEY);
+        // check if the user exist on database or not;
+        if ((await userModel.find({mail: decode.id})).length !== 1) {
+            return false;
+        }
+        // res.status(200).json({success: true, msg: 'Authentication successful'});
+        return true;
+    } catch (error) {
+        console.error(error)
+        return false;
+    }
+}
 //* the login function will be used to provide the JWT token to any user stored in DB
 const login = async (req, res) => {
     if (!req.body['mail'] || !req.body['password']) {
@@ -70,7 +86,6 @@ const login = async (req, res) => {
         }
         // * here, the mail of user is considered as id of that person. this JWT will expire in giver amount of time in options object
         const signedJWT = jwt.sign({id: req.body['mail']}, process.env.JWT_SECRET_KEY, {expiresIn: '1h'});
-        console.log('signed jwt is: ', signedJWT);
         res.json({
             success: true,
             token: signedJWT
@@ -84,4 +99,23 @@ const login = async (req, res) => {
         });
     }
 };
-module.exports = {authorize, login};
+
+// * this utility function gets the authorized user details from the request made by it
+const getUserDetails = async (req) => {
+    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
+        return false;
+    }
+    try {
+        const decode = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET_KEY);
+        // check if the user exist on database or not;
+        const d = await userModel.findOne({mail: decode.id}).select({'password': 0});
+        if (d) {
+            return d;
+        }
+        return false;
+    } catch (error) {
+        console.error(error)
+        return false;
+    }
+}
+module.exports = {authorize, login, isAuthorized, getUserDetails};

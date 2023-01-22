@@ -1,32 +1,39 @@
 # API Docs
 
 ### getting some posts,
+
 `GET /api/v1/blogs`
 
-Example response 
-```js
+`params: limit`
+
+Example response
+
+```json lines
 {
-    success:true,
-    data:[
-        {
-            _id:'a unique mongodb id of that blog', 
-            title:'The blog post title',
-            author:'Name of author',
-            brief:'a quick summary of blog post',
-            thumbnail_link:'link to the thumbnail of that post',
-            keywords:[
-                'some keyword which are used to search the blog',
-                'maximum 5 keywords will be sent'
-            ]
-        }
-    ]
+  success: true,
+  data: [
+    {
+      _id: 'a unique mongodb id of that blog',
+      title: 'The blog post title',
+      author: 'Name of author',
+      brief: 'a quick summary of blog post',
+      thumbnail_link: 'link to the thumbnail of that post',
+      keywords: [
+        'some keyword which are used to search the blog',
+        'maximum 5 keywords will be sent'
+      ]
+    }
+  ]
 }
 ```
+
 ### getting a single post,
+
 `GET /api/v1/blogs/:id`
 
-Example response 
-```js
+Example response
+
+```json lines
 {
   success: true,
   data: {
@@ -47,12 +54,14 @@ Example response
   }
 }
 ```
+
 ### creating a post,
 
 `POST /api/v1/blogs/`
 
 Example response
-```js
+
+```json lines
 {
   success: true,
   data: {
@@ -71,12 +80,14 @@ Example response
 
 
 ```
+
 ### searching for posts,
+
 `GET /api/v1/blogs/search?searchTerm=javascript something anny&fullobject=false&limit=10`
 
 Example response
 
-```js
+```json lines
 {
   success: true,
   data: [
@@ -146,13 +157,14 @@ Example response
   ]
 }
 ```
+
 ### deleting a post,
 
 `DELETE /api/v1/blogs/:id`
 
 Example response
 
-```js
+```json lines
 {
   success: true,
   data: {
@@ -174,12 +186,11 @@ Example response
 
 ### updating some or all field of a post,
 
-
 `PATCH /api/v1/blogs/:id`
 
 Example requets body
 
-```js
+```json lines
 {
   title: 'A new title for blog',
   brief: 'two modern day programming languages.',
@@ -190,8 +201,10 @@ Example requets body
   content: '# this is an updated version of blog,\nhope you will like it'
 }
 ```
+
 Example response
-```js
+
+```json lines
 {
   success: true,
   data: {
