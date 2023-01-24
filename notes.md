@@ -34,4 +34,3 @@ request.body = {mail, password, username}
 ## todo:
 
 * user profile picture is not implemented
-* comments are not implemented

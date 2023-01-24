@@ -1,11 +1,10 @@
 const model = require('../db/model/blogs.cjs');
 const userModel = require('../db/model/user.cjs');
+const commentsModel = require('../db/model/comments.cjs');
 const {isAuthorized, getUserDetails} = require('./auth/auth-middleware.cjs');
-const VALIDATE_ID = (id) => {
-    // validation of mongodb's _id
-    return id.match(/^[0-9a-fA-F]{24}$/);
-};
+const {getBlogDetails} = require('./validation.cjs')
 const converter = require('../libraries/showdown.cjs');
+const {isValidObjectId} = require("mongoose");
 
 const getFewBlogs = async (req, res, next) => {
     // send blogs without their content field
@@ -23,7 +22,7 @@ const getFewBlogs = async (req, res, next) => {
 const getOneBlog = async (req, res, next) => {
     // get a blog by it's id
     try {
-        if (!VALIDATE_ID(req.params.id)) return res.status(400).json({success: false, data: []});
+        if (!isValidObjectId(req.params.id)) return res.status(400).json({success: false, data: []});
         const data = await model.findOne({_id: req.params.id});
         if (data) {
             if (await isAuthorized(req)) {
@@ -90,7 +89,7 @@ const createBlog = async (req, res) => {
 const deleteBlog = async (req, res, next) => {
     // delete blog by it's id
     try {
-        if (!VALIDATE_ID(req.params.id)) return res.status(400).json({success: false, data: []});
+        if (!isValidObjectId(req.params.id)) return res.status(400).json({success: false, data: []});
         const tmp = await getUserDetails(req);
         if (!tmp) res.status(404).json({success: false, msg: 'user not found'});
         const wantToDelete = await model.findById(req.params.id);
@@ -146,7 +145,7 @@ const updateBlog = async (req, res, next) => {
 
     try {
 
-        if (!VALIDATE_ID(req.params.id)) return res.status(400).json({success: false, msg: 'ID validation failed'});
+        if (!isValidObjectId(req.params.id)) return res.status(400).json({success: false, msg: 'ID validation failed'});
 
         const tmp = await getUserDetails(req);
         if (!tmp) res.status(404).json({success: false, msg: 'user not found'});
@@ -180,7 +179,7 @@ const updateBlog = async (req, res, next) => {
     }
 };
 
-const getUserProfile = async (req, res, next) => {
+const getUserProfile = async (req, res) => {
     try {
 
         const data = await userModel.findById(req.params.id);
@@ -193,37 +192,43 @@ const getUserProfile = async (req, res, next) => {
     }
 }
 
-const likePost = async (req, res, next) => {
-    if (!(await isAuthorized(req))) {
-        // bad request
-        return res.status(404).json({success: false, msg: 'User is not authorized'})
-    }
-    if (!VALIDATE_ID(req.params.id))
-        return res.status(404).json({success: false, msg: 'User is not authorized'});
-    const d = await model.findById(req.params.id);
-    const userDetails = await getUserDetails(req);
-    if (!userDetails)
-        return res.status(404).json({success: false, msg: 'User is not authorized'});
+const likePost = async (req, res) => {
+    try {
 
-    if (d.meta.stargazers.includes(userDetails._id)) {
-        // remove the like from the user
-        const newStargazers = d.meta.stargazers.filter(e => e !== userDetails._id.toString());
-        console.log(newStargazers,d.meta.stargazers,userDetails._id);
+        if (!(await isAuthorized(req))) {
+            // bad request
+            return res.status(404).json({success: false, msg: 'User is not authorized'})
+        }
+        if (!isValidObjectId(req.params.id))
+            return res.status(404).json({success: false, msg: 'User is not authorized'});
+        const d = await model.findById(req.params.id);
+        const userDetails = await getUserDetails(req);
+        if (!userDetails)
+            return res.status(404).json({success: false, msg: 'User is not authorized'});
+
+        if (d.meta.stargazers.includes(userDetails._id)) {
+            // remove the like from the user
+            const newStargazers = d.meta.stargazers.filter(e => e !== userDetails._id.toString());
+            console.log(newStargazers, d.meta.stargazers, userDetails._id);
 
 
+            const data = await model.findByIdAndUpdate(req.params.id, {
+                "meta.likes": d.meta.likes - 1,
+                "meta.stargazers": newStargazers
+            }, {new: true});
+            return res.status(200).json({success: true, data});
+        }
         const data = await model.findByIdAndUpdate(req.params.id, {
-            "meta.likes": d.meta.likes - 1,
-            "meta.stargazers": newStargazers
+            "meta.likes": d.meta.likes + 1,
+            "meta.stargazers": [...d.meta.stargazers, userDetails._id]
         }, {new: true});
-        return res.status(200).json({success: true, data});
+
+
+        res.status(200).json({success: true, data});
+    } catch (e) {
+        console.log(e);
+        return res.status(404).json({success: false, msg: 'something went wrong', details: e});
     }
-    const data = await model.findByIdAndUpdate(req.params.id, {
-        "meta.likes": d.meta.likes + 1,
-        "meta.stargazers": [...d.meta.stargazers, userDetails._id]
-    }, {new: true});
-
-
-    res.status(200).json({success: true, data});
 }
 const filterObjectsByKey = (obj, filterKeys) => {
 
@@ -239,6 +244,58 @@ const filterObjectsByKey = (obj, filterKeys) => {
 
 };
 
+const createComment = async (req, res, next) => {
+    try {
+
+        // id of blog will be on the req.params
+        const BlogID = await getBlogDetails(req.params.id);
+        const user = await getUserDetails(req);
+        const commentContent = req.body.content.trim();
+        console.log({
+            BlogID, user, commentContent
+        })
+        if (!BlogID || !user || !commentContent) {
+            return res.status(404).json({success: false, msg: 'Invalid inputs'});
+        }
+
+        // store and update the comments
+        const obj = {
+            content: commentContent,
+            by: {id: user._id.toString(), uname: user.username},
+            of: BlogID._id.toString()
+        }
+        const data = await commentsModel.create(obj);
+        res.json({success: true, data})
+    } catch (e) {
+        res.status(404).json({success: false, msg: e})
+        next();
+    }
+}
+
+const fetchComments = async (req, res, next) => {
+    try {
+
+        const id = req.params.id;
+        if (!isValidObjectId(id)) {
+            // bad request
+            return res.status(202).json({success: false, msg: 'invalid object id'})
+        }
+        const data = await commentsModel.find({of: id});
+        return res.status(200).json({success: true, data})
+    } catch (e) {
+        console.log(e);
+        return res.status(404).json({success: false, msg: e})
+    }
+}
 module.exports = {
-    getFewBlogs, getOneBlog, createBlog, searchBlog, deleteBlog, updateBlog, getUserDetails: getUserProfile, likePost
+    getFewBlogs,
+    getOneBlog,
+    createBlog,
+    searchBlog,
+    deleteBlog,
+    updateBlog,
+    getUserDetails: getUserProfile,
+    likePost,
+    createComment,
+    fetchComments
 };
