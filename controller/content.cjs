@@ -5,6 +5,9 @@ const {isAuthorized, getUserDetails} = require('./auth/auth-middleware.cjs');
 const {getBlogDetails} = require('./validation.cjs')
 const converter = require('../libraries/showdown.cjs');
 const {isValidObjectId} = require("mongoose");
+const path = require("path");
+const fs = require("fs");
+const {convertImage} = require("./fileHandle.cjs");
 
 const getFewBlogs = async (req, res, next) => {
     // send blogs without their content field
@@ -43,8 +46,7 @@ const createBlog = async (req, res) => {
     // create a new blog (data would be sent via post request)
     try {
         let body;
-        const a = [
-            'keywords', // [String] (* maximum 5)
+        const a = ['keywords', // [String] (* maximum 5)
             'title',    // String
             'content',  // String   (* markdown content)
         ];
@@ -64,17 +66,12 @@ const createBlog = async (req, res) => {
             throw new Error('Author details didn\'t match');
         }
         body.author = {
-            username: user.username,
-            id: user._id
+            username: user.username, id: user._id
         };
         const obj = {
             content: {
-                title: body.title,
-                post: body.content
-            },
-            keywords: body.keywords,
-            author: body.author,
-            meta: {views: 0, likes: 0}
+                title: body.title, post: body.content
+            }, keywords: body.keywords, author: body.author, meta: {views: 0, likes: 0}
         }
         let data = await model.create(obj);
         data = data.toJSON();
@@ -121,9 +118,7 @@ const searchBlog = async (req, res, next) => {
 
         if (fullObject) {
             const data = await model.find({
-                $or: [{keywords: {$in: q}},
-                    {title: {$in: q}},
-                    {author: {$in: q}}]
+                $or: [{keywords: {$in: q}}, {title: {$in: q}}, {author: {$in: q}}]
             })
                 .skip((page - 1) * limit).limit(limit);
             if (data) return res.status(200).json({success: true, data});
@@ -167,8 +162,7 @@ const updateBlog = async (req, res, next) => {
 
         const data = await model.findByIdAndUpdate(req.params.id, {
             content: {
-                title: newObject.title,
-                post: newObject.content
+                title: newObject.title, post: newObject.content
             }, keywords: newObject.keywords
         }, {new: true});
         if (data) return res.status(200).json({success: true, data});
@@ -181,11 +175,10 @@ const updateBlog = async (req, res, next) => {
 
 const getUserProfile = async (req, res) => {
     try {
-
         const data = await userModel.findById(req.params.id);
+        if (!data) return res.status(404).json({success: false, msg: 'User not found'})
         res.status(200).json({
-            success: true,
-            data
+            success: true, data
         });
     } catch (err) {
         res.status(404).json({success: false, msg: 'user not found'});
@@ -199,12 +192,13 @@ const likePost = async (req, res) => {
             // bad request
             return res.status(404).json({success: false, msg: 'User is not authorized'})
         }
-        if (!isValidObjectId(req.params.id))
-            return res.status(404).json({success: false, msg: 'User is not authorized'});
+        if (!isValidObjectId(req.params.id)) return res.status(404).json({
+            success: false,
+            msg: 'User is not authorized'
+        });
         const d = await model.findById(req.params.id);
         const userDetails = await getUserDetails(req);
-        if (!userDetails)
-            return res.status(404).json({success: false, msg: 'User is not authorized'});
+        if (!userDetails) return res.status(404).json({success: false, msg: 'User is not authorized'});
 
         if (d.meta.stargazers.includes(userDetails._id)) {
             // remove the like from the user
@@ -213,14 +207,12 @@ const likePost = async (req, res) => {
 
 
             const data = await model.findByIdAndUpdate(req.params.id, {
-                "meta.likes": d.meta.likes - 1,
-                "meta.stargazers": newStargazers
+                "meta.likes": d.meta.likes - 1, "meta.stargazers": newStargazers
             }, {new: true});
             return res.status(200).json({success: true, data});
         }
         const data = await model.findByIdAndUpdate(req.params.id, {
-            "meta.likes": d.meta.likes + 1,
-            "meta.stargazers": [...d.meta.stargazers, userDetails._id]
+            "meta.likes": d.meta.likes + 1, "meta.stargazers": [...d.meta.stargazers, userDetails._id]
         }, {new: true});
 
 
@@ -260,9 +252,7 @@ const createComment = async (req, res, next) => {
 
         // store and update the comments
         const obj = {
-            content: commentContent,
-            by: {id: user._id.toString(), uname: user.username},
-            of: BlogID._id.toString()
+            content: commentContent, by: {id: user._id.toString(), uname: user.username}, of: BlogID._id.toString()
         }
         const data = await commentsModel.create(obj);
         res.json({success: true, data})
@@ -287,6 +277,66 @@ const fetchComments = async (req, res, next) => {
         return res.status(404).json({success: false, msg: e})
     }
 }
+
+// server of user profile images
+const getUserProfilePicture = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const user = await userModel.findById(id);
+
+        const options = {
+            root: path.join(__dirname, '../uploads/')
+        };
+
+        if (!user) return res.status(404).json({success: false, msg: 'User not found'});
+        const filename = user.mail + '.png';
+        let doFileExist;
+        try {
+            fs.accessSync(path.join(options.root, filename));
+            doFileExist = true;
+        } catch (err) {
+            console.log('debug:' + err)
+            doFileExist = false;
+        }
+        if (doFileExist)
+            return res.sendFile(filename, options);
+        return res.json({success: false, msg: 'No profile picture is set for this user'})
+    } catch (e) {
+        console.log(e)
+        next();
+    }
+}
+
+const setProfilePicture = async (req, res, next) => {
+    try {
+        const user = await getUserDetails(req);
+        if (!user) {
+            // not authorized
+            res.status(404).json({success: false, msg: 'user is not authorized'});
+        }
+        if (req.file) {
+            console.log(req.file);
+            try {
+                await convertImage(path.join(__dirname, '../uploads/' + req.file.filename), req.file.filename);
+                return res.json({success: true,
+                    file: {
+                        name: req.file.originalname,
+                        encoding: req.file.encoding,
+                        mimetype: req.file.mimetype,
+                        size: req.file.size
+                    }
+                });
+            } catch (e) {
+                console.log(e);
+                return res.status(404).json({success: false, msg: 'Input validation failed', error: e})
+            }
+        }
+        return res.status(404).json({success: false, msg: 'Attached file not found'});
+    } catch (e) {
+        console.log(e);
+        next();
+    }
+}
 module.exports = {
     getFewBlogs,
     getOneBlog,
@@ -297,5 +347,7 @@ module.exports = {
     getUserDetails: getUserProfile,
     likePost,
     createComment,
-    fetchComments
+    fetchComments,
+    getUserProfilePicture,
+    setProfilePicture
 };

@@ -32,5 +32,4 @@ request.body = {mail, password, username}
 ```
 
 ## todo:
-
-* user profile picture is not implemented
+* take a break and wait for another tasks to come here
