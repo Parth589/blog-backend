@@ -1,11 +1,13 @@
 # A Blog application
+
 ### functionality provided by frontend
+
 * read any blog post
 * writing a post
 * to customize the post, you can use markdown syntax.
 
-
 ### functionality provided by backend API
+
 * creating a blog post,
 * get all data about a post
 * updating a post,

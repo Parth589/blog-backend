@@ -2,9 +2,8 @@ console.log('Application started');
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 5000;
-const connectDB=require('./db/connect.cjs');
+const connectDB = require('./db/connect.cjs');
 require('dotenv').config(); // to load .env file on startup
-
 
 
 let domain = process.env.DOMAIN;

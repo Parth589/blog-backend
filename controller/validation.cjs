@@ -12,7 +12,6 @@ const getBlogDetails = (id) => {
 
 const validateRegister = async (req) => {
     let {mail, password, username} = req.body;
-    console.log(req.body)
     if ((!mail || !password || !username) || ((!mail || !username || !password) && (!mail.trim() || !username.trim()))) {
         return {success: false, msg: 'one or more of the fields are empty '};
     }
@@ -20,7 +19,6 @@ const validateRegister = async (req) => {
     req.body.username = username.trim();
     const data = await userModel.find({mail: req.body.mail})
     // the data.length must be 0 in order to validate the user
-    console.log({mail: req.body.mail, data});
     return {success: data.length === 0, msg: 'E-mail id already exist'};
 }
 module.exports = {

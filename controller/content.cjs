@@ -193,8 +193,7 @@ const likePost = async (req, res) => {
             return res.status(404).json({success: false, msg: 'User is not authorized'})
         }
         if (!isValidObjectId(req.params.id)) return res.status(404).json({
-            success: false,
-            msg: 'User is not authorized'
+            success: false, msg: 'User is not authorized'
         });
         const d = await model.findById(req.params.id);
         const userDetails = await getUserDetails(req);
@@ -203,7 +202,6 @@ const likePost = async (req, res) => {
         if (d.meta.stargazers.includes(userDetails._id)) {
             // remove the like from the user
             const newStargazers = d.meta.stargazers.filter(e => e !== userDetails._id.toString());
-            console.log(newStargazers, d.meta.stargazers, userDetails._id);
 
 
             const data = await model.findByIdAndUpdate(req.params.id, {
@@ -243,17 +241,32 @@ const createComment = async (req, res, next) => {
         const BlogID = await getBlogDetails(req.params.id);
         const user = await getUserDetails(req);
         const commentContent = req.body.content.trim();
-        console.log({
-            BlogID, user, commentContent
-        })
         if (!BlogID || !user || !commentContent) {
             return res.status(404).json({success: false, msg: 'Invalid inputs'});
         }
 
-        // store and update the comments
+        // populate the object to make the DB entry
         const obj = {
-            content: commentContent, by: {id: user._id.toString(), uname: user.username}, of: BlogID._id.toString()
+            by: {id: user._id.toString(), uname: user.username},
+            content: commentContent,
+            of: BlogID._id.toString(),
+            parent: null,
+            replies: false
         }
+
+        // if comment is reply for another comment, check if parent exists or not
+        const parentID = req.body.parent;
+        if (parentID) {
+            const d = await commentsModel.findByIdAndUpdate(parentID, {replies: true});
+            console.log({d});
+            if (!d) {
+                // bad request
+                return res.status(404).json({success: false, msg: 'The parent comment not found'});
+            }
+            obj.parent = req.body.parent;
+        }
+
+        // store the comment
         const data = await commentsModel.create(obj);
         res.json({success: true, data})
     } catch (e) {
@@ -265,12 +278,13 @@ const createComment = async (req, res, next) => {
 const fetchComments = async (req, res, next) => {
     try {
 
-        const id = req.params.id;
+        const id = req.params.id;// id of blog
+        const parent = req.query.p || null; // id of parent
         if (!isValidObjectId(id)) {
             // bad request
             return res.status(202).json({success: false, msg: 'invalid object id'})
         }
-        const data = await commentsModel.find({of: id});
+        const data = await commentsModel.find({of: id, parent});
         return res.status(200).json({success: true, data})
     } catch (e) {
         console.log(e);
@@ -298,8 +312,7 @@ const getUserProfilePicture = async (req, res, next) => {
             console.log('debug:' + err)
             doFileExist = false;
         }
-        if (doFileExist)
-            return res.sendFile(filename, options);
+        if (doFileExist) return res.sendFile(filename, options);
         return res.json({success: false, msg: 'No profile picture is set for this user'})
     } catch (e) {
         console.log(e)
@@ -315,11 +328,10 @@ const setProfilePicture = async (req, res, next) => {
             res.status(404).json({success: false, msg: 'user is not authorized'});
         }
         if (req.file) {
-            console.log(req.file);
             try {
                 await convertImage(path.join(__dirname, '../uploads/' + req.file.filename), req.file.filename);
-                return res.json({success: true,
-                    file: {
+                return res.json({
+                    success: true, file: {
                         name: req.file.originalname,
                         encoding: req.file.encoding,
                         mimetype: req.file.mimetype,

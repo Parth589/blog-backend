@@ -26,7 +26,7 @@ router.put('/userProfile', (req, res, next) => {
         // res.json({success:true});
         next();
     });
-},setProfilePicture);
+}, setProfilePicture);
 
 
 module.exports = router;

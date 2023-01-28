@@ -6,16 +6,14 @@ const {getUserDetails} = require("./auth/auth-middleware.cjs");
 const fs = require("fs");
 
 const storage = multer.diskStorage({
-    destination: 'uploads/',
-    filename: async function (req, file, cb) {
+    destination: 'uploads/', filename: async function (req, file, cb) {
         const user = await getUserDetails(req);
         cb(null, user.mail + '.ext');
     }
 })
 
 const upload = multer({
-    storage: storage,
-    fileFilter: async function (req, file, cb) {
+    storage: storage, fileFilter: async function (req, file, cb) {
         // check the user credentials
         const user = await getUserDetails(req);
         if (!user) {
@@ -26,8 +24,7 @@ const upload = multer({
             return cb(new Error('Invalid file type'), false);
         }
         cb(null, true);
-    },
-    limits: {
+    }, limits: {
         fileSize: 5 * 1024 * 1024 // 5 MB
     }
 
@@ -43,9 +40,7 @@ const convertImage = async (filepath, filename) => {
     await fs.unlink(filepath, () => {
 
     });
-    console.log(res);
 }
 module.exports = {
-    upload,
-    convertImage
+    upload, convertImage
 }

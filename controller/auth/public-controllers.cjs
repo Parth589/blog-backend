@@ -16,7 +16,6 @@ const register = async (req, res, next) => {
         // make a new entry in database 
         const obj = {mail, password, username};
         const tmp = await userModel.find({mail: obj.mail});
-        console.log({mail, tmp})
         if (tmp.length !== 0) {
             res.status(404).json({
                 success: false,
