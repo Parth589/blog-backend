@@ -46,7 +46,10 @@ const schema = new mongoose.Schema({
                 required: true,
             },
         },
-        thumbnail_link: String
+        thumbnail_link: {
+            type: String,
+            required: true
+        }
     },
 
     {

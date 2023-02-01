@@ -164,8 +164,8 @@ const updateBlog = async (req, res, next) => {
             return res.status(404).json({success: false, msg: 'can\'t update someone else\'s post'})
         }
 
-        const a = ['keywords', 'title', 'content'];
-        const newObject = filterObjectsByKey(req.body, a);// user can perform on these fields
+        const a = ['keywords', 'title', 'content', 'thumbnail_link'];
+        const newObject = filterObjectsByKey(req.body, a);// user can perform update on these fields
 
         // validating inputs
         if (!Array.isArray(newObject.keywords)) throw new Error('input validation failed');
