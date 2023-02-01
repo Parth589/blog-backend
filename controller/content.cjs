@@ -8,6 +8,8 @@ const {isValidObjectId} = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 const {convertImage} = require("./fileHandle.cjs");
+const bcrypt = require("bcrypt");
+const {verifyUser} = require("./auth/auth-middleware.cjs");
 
 const getFewBlogs = async (req, res, next) => {
     // send blogs without their content field
@@ -22,6 +24,8 @@ const getFewBlogs = async (req, res, next) => {
         next();
     }
 };
+
+
 const getOneBlog = async (req, res, next) => {
     // get a blog by it's id
     try {
@@ -42,6 +46,8 @@ const getOneBlog = async (req, res, next) => {
         next();
     }
 };
+
+
 const createBlog = async (req, res) => {
     // create a new blog (data would be sent via post request)
     try {
@@ -49,6 +55,7 @@ const createBlog = async (req, res) => {
         const a = ['keywords', // [String] (* maximum 5)
             'title',    // String
             'content',  // String   (* markdown content)
+            'thumbnail_link',  // String   (* link to the thumbnail image)
         ];
 
         // filtering the object
@@ -71,7 +78,11 @@ const createBlog = async (req, res) => {
         const obj = {
             content: {
                 title: body.title, post: body.content
-            }, keywords: body.keywords, author: body.author, meta: {views: 0, likes: 0}
+            },
+            keywords: body.keywords,
+            author: body.author,
+            meta: {views: 0, likes: 0},
+            thumbnail_link: body.thumbnail_link
         }
         let data = await model.create(obj);
         data = data.toJSON();
@@ -105,6 +116,7 @@ const deleteBlog = async (req, res, next) => {
     }
 };
 
+
 const searchBlog = async (req, res, next) => {
     // Search blogs using their keywords, title or author (multiple fields also can be specified)
     try {
@@ -135,11 +147,11 @@ const searchBlog = async (req, res, next) => {
     }
 };
 
+
 const updateBlog = async (req, res, next) => {
     //  update a blog using its id (data on the req.body)
 
     try {
-
         if (!isValidObjectId(req.params.id)) return res.status(400).json({success: false, msg: 'ID validation failed'});
 
         const tmp = await getUserDetails(req);
@@ -173,6 +185,7 @@ const updateBlog = async (req, res, next) => {
     }
 };
 
+
 const getUserProfile = async (req, res) => {
     try {
         const data = await userModel.findById(req.params.id);
@@ -183,11 +196,11 @@ const getUserProfile = async (req, res) => {
     } catch (err) {
         res.status(404).json({success: false, msg: 'user not found'});
     }
-}
+};
+
 
 const likePost = async (req, res) => {
     try {
-
         if (!(await isAuthorized(req))) {
             // bad request
             return res.status(404).json({success: false, msg: 'User is not authorized'})
@@ -203,23 +216,24 @@ const likePost = async (req, res) => {
             // remove the like from the user
             const newStargazers = d.meta.stargazers.filter(e => e !== userDetails._id.toString());
 
-
             const data = await model.findByIdAndUpdate(req.params.id, {
                 "meta.likes": d.meta.likes - 1, "meta.stargazers": newStargazers
             }, {new: true});
-            return res.status(200).json({success: true, data});
+            return res.status(200).json({success: true, meta: data.meta});
         }
         const data = await model.findByIdAndUpdate(req.params.id, {
             "meta.likes": d.meta.likes + 1, "meta.stargazers": [...d.meta.stargazers, userDetails._id]
         }, {new: true});
 
 
-        res.status(200).json({success: true, data});
+        res.status(200).json({success: true, meta: data.meta});
     } catch (e) {
         console.log(e);
         return res.status(404).json({success: false, msg: 'something went wrong', details: e});
     }
-}
+};
+
+
 const filterObjectsByKey = (obj, filterKeys) => {
 
     // all keys other than filterKeys would be rejected and final object will be returned
@@ -233,6 +247,7 @@ const filterObjectsByKey = (obj, filterKeys) => {
     return res;
 
 };
+
 
 const createComment = async (req, res, next) => {
     try {
@@ -273,7 +288,8 @@ const createComment = async (req, res, next) => {
         res.status(404).json({success: false, msg: e})
         next();
     }
-}
+};
+
 
 const fetchComments = async (req, res, next) => {
     try {
@@ -290,7 +306,8 @@ const fetchComments = async (req, res, next) => {
         console.log(e);
         return res.status(404).json({success: false, msg: e})
     }
-}
+};
+
 
 // server of user profile images
 const getUserProfilePicture = async (req, res, next) => {
@@ -318,7 +335,8 @@ const getUserProfilePicture = async (req, res, next) => {
         console.log(e)
         next();
     }
-}
+};
+
 
 const setProfilePicture = async (req, res, next) => {
     try {
@@ -348,7 +366,36 @@ const setProfilePicture = async (req, res, next) => {
         console.log(e);
         next();
     }
+};
+
+// make two different routes to edit password and username
+const editUsername = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+
+        // check if the user with id exists or not
+        const user = await getUserDetails(req); // the user details who requested the change
+        if (!user) {
+            // bad request
+            return res.status(404).json({success: false, msg: 'Cant find the user'});
+        }
+        const rUser = await userModel.findById(id);
+        console.log({rUser, user});
+        if (rUser._id.toString() !== user._id.toString()) {
+            return res.status(404).json({success: false, msg: 'The user id\'s didn\'t match'});
+        }
+        const updatedObj = {
+            username: req.body.username
+        }
+        console.log("debug: ", {updatedObj});
+
+        const data = await userModel.findByIdAndUpdate(id, updatedObj, {new: true});
+        res.status(200).json({success: true, data});
+    } catch (e) {
+        res.status(404).json({success: false, msg: e})
+    }
 }
+
 module.exports = {
     getFewBlogs,
     getOneBlog,
@@ -361,5 +408,6 @@ module.exports = {
     createComment,
     fetchComments,
     getUserProfilePicture,
-    setProfilePicture
+    setProfilePicture,
+    editUsername
 };

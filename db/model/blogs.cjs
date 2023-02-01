@@ -45,7 +45,8 @@ const schema = new mongoose.Schema({
                 type: [{type: String, trim: true}],
                 required: true,
             },
-        }
+        },
+        thumbnail_link: String
     },
 
     {

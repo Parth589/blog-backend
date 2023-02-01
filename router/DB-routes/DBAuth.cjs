@@ -5,7 +5,8 @@ const {
     updateBlog,
     likePost,
     createComment,
-    setProfilePicture
+    setProfilePicture,
+    editUsername
 } = require("../../controller/content.cjs");
 const {upload} = require('../../controller/fileHandle.cjs');
 
@@ -27,6 +28,6 @@ router.put('/userProfile', (req, res, next) => {
         next();
     });
 }, setProfilePicture);
-
+router.put('/user/username/:id',editUsername)
 
 module.exports = router;

@@ -118,4 +118,4 @@ const getUserDetails = async (req) => {
         return false;
     }
 }
-module.exports = {authorize, login, isAuthorized, getUserDetails};
+module.exports = {authorize, login, isAuthorized, getUserDetails, verifyUser};
