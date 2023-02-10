@@ -1,34 +1,24 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../../db/model/user.cjs');
-const bcrypt = require('bcrypt');
-const verifyInputs = (mail, password) => {
+const nodemailer = require("nodemailer");
+const verifyInputs = (mail) => {
     mail = mail.trim();
-    password = password.trim();
     const mailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    return !(!mailRegex.test(mail) || !password);
-    // it can be explained as,
-    // if (!mailRegex.test(mail) || !password)
-    //     return false;
-    // return true;
-
+    return mailRegex.test(mail);
 };
 
-const verifyUser = async (mail, password) => {
-    if (!verifyInputs(mail, password))
+const verifyUser = async (mail) => {
+    if (!verifyInputs(mail))
         return false;
 
     // will find the user with mail id in database and return result according to it.
     let data = await userModel.find({mail});
-    if (data.length !== 1)
-        return false;
-    data = data[0];
-    try {
-        return await bcrypt.compare(password, data['password']);
-    } catch (error) {
-        console.log(error);
-        console.trace();
-        return false;
-    }
+
+    return data.length === 1;
+    // * above statement can be simplified as
+    // if (data.length !== 1)
+    //     return false;
+    // return true;
 };
 
 //* the authorize function will be used to check if the host is eligible for accessing the database or not
@@ -71,28 +61,56 @@ const isAuthorized = async (req) => {
 }
 //* the login function will be used to provide the JWT token to any user stored in DB
 const login = async (req, res) => {
-    if (!req.body['mail'] || !req.body['password']) {
-        return res.status(400).json({msg: 'username and password are required.'});
+    if (!req.body['mail']) {
+        return res.status(400).json({msg: 'email is required in order to login'});
     }
     try {
         // check if the given mail and password are correct or not
-        const c = await verifyUser(req.body['mail'], req.body['password']);
+        const c = await verifyUser(req.body['mail']);
         if (!c) {
-            res.status(401).json({
-                success: false,
-                msg: 'Unauthorized request'
+            // this message is for those who provide invalid emails and try to mess with system
+            return res.status(200).json({
+                success: true,
+                msg: 'check your email to finish logging in'
             });
-            return;
         }
         // * here, the mail of user is considered as id of that person. this JWT will expire in giver amount of time in options object
         const signedJWT = jwt.sign({id: req.body['mail']}, process.env.JWT_SECRET_KEY, {expiresIn: '1h'});
-        res.json({
-            success: true,
-            token: signedJWT
+        // send an email with a link href= endpoint?token=signedJWT
+
+        // Step 1
+        let transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.APP_EMAIL,
+                pass: process.env.APP_PASSWORD
+            }
+        });
+        // Step 2
+        let mailOptions = {
+            from: 'quillthe59@gmail.com',
+            to: req.body.mail,
+            subject: 'Nodemailer - Test',
+            html: `<a href="http://${process.env.DOMAIN}/verify/?token=${signedJWT}">Click here to log in</a>`
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                res.status(404).json({
+                    success: false,
+                    msg: 'Email not sent'
+                })
+            } else {
+                console.log('Email sent: ' + info.response);
+                res.json({
+                    success: true,
+                    msg: 'check your email to finish logging in'
+                });
+            }
         });
     } catch (error) {
         console.log(error);
-        console.trace();
         return res.status(500).json({
             success: false,
             msg: 'something went wrong'
@@ -118,4 +136,37 @@ const getUserDetails = async (req) => {
         return false;
     }
 }
-module.exports = {authorize, login, isAuthorized, getUserDetails, verifyUser};
+
+
+const linkLogin = async (req, res) => {
+    const token = req.query.token || null;
+    if (!token) {
+        //* unauthorized request
+        return res.send('Invalid token');
+    }
+    try {
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const user = await userModel.findOne({mail: decodedToken.id});
+        //* unauthorized request
+        if(!user)return res.status(404).send('Unauthorized user');
+        return res.send(`
+        <html lang="en">
+        <body>
+        Authed with mail: ${user.username}
+        <script>
+            const jwt="${token}";
+            localStorage.setItem('token',jwt);
+            location.href="http://${process.env.DOMAIN}/"
+        </script>
+        </body>
+        </html>
+        `);
+    } catch (e) {
+        console.log(e);
+        return res.send('some error occurred');
+    }
+    // res.redirect('/');// redirect to the dashboard (list view)
+}
+
+
+module.exports = {authorize, login, isAuthorized, getUserDetails, linkLogin};

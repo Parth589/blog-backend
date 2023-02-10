@@ -11,8 +11,8 @@ const getBlogDetails = (id) => {
 }
 
 const validateRegister = async (req) => {
-    let {mail, password, username} = req.body;
-    if ((!mail || !password || !username) || ((!mail || !username || !password) && (!mail.trim() || !username.trim()))) {
+    let {mail, username} = req.body;
+    if ((!mail || !username) || ((!mail || !username) && (!mail.trim() || !username.trim()))) {
         return {success: false, msg: 'one or more of the fields are empty '};
     }
     req.body.mail = mail.trim();

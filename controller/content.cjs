@@ -8,9 +8,6 @@ const {isValidObjectId} = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 const {convertImage} = require("./fileHandle.cjs");
-const bcrypt = require("bcrypt");
-const {verifyUser} = require("./auth/auth-middleware.cjs");
-
 const getFewBlogs = async (req, res, next) => {
     // send blogs without their content field
     const LIMIT = req.body.limit || 10;
@@ -291,7 +288,7 @@ const createComment = async (req, res, next) => {
 };
 
 
-const fetchComments = async (req, res, next) => {
+const fetchComments = async (req, res) => {
     try {
 
         const id = req.params.id;// id of blog
@@ -369,7 +366,7 @@ const setProfilePicture = async (req, res, next) => {
 };
 
 // make two different routes to edit password and username
-const editUsername = async (req, res, next) => {
+const editUsername = async (req, res) => {
     try {
         const id = req.params.id;
 

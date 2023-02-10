@@ -31,7 +31,10 @@ request.body = {mail, password, username}
 }
 ```
 
+* the jwt token will be stored into session storage in frontend.
+
 ## todo:
 
 * try to replace data type from String to ObjectId all fields which are storing reference to another objects in DB
 * take a break and wait for another tasks to come here
+* the emailing is not working (configurations are incorrect)
