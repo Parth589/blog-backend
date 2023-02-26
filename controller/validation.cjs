@@ -19,7 +19,7 @@ const validateRegister = async (req) => {
     req.body.username = username.trim();
     const data = await userModel.find({mail: req.body.mail})
     // the data.length must be 0 in order to validate the user
-    return {success: data.length === 0, msg: 'E-mail id already exist'};
+    return {success: data?.length === 0, msg: 'E-mail id already exist'};
 }
 module.exports = {
     getBlogDetails,

@@ -21,18 +21,32 @@ const verifyUser = async (mail) => {
     // return true;
 };
 
-//* the authorize function will be used to check if the host is eligible for accessing the database or not
-const authorize = async (req, res, next) => {
-    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
-        return res.status(401).json({msg: 'User is not authorized'});
+// * this utility function checks if the request is made by authorized user or not
+const isAuthorized = async (req) => {
+    if (!req.cookies || !req.cookies.__login_token) {
+        return false;
     }
     try {
-        const decode = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET_KEY);
+        const passedJWT = req.cookies.__login_token;
+        const decode = jwt.verify(passedJWT, process.env.JWT_SECRET_KEY);
         // check if the user exist on database or not;
-        if ((await userModel.find({mail: decode.id})).length !== 1) {
-            return res.status(401).json({msg: 'User not found'});
+        if ((await userModel.find({mail: decode.id})).length !== 1) {// here decode.id stands for the mail in the jwt payload.
+            return false;
         }
         // res.status(200).json({success: true, msg: 'Authentication successful'});
+        return decode.id;
+    } catch (error) {
+        console.error(error)
+        return false;
+    }
+}
+
+//* the authorize function will be used to check if the host is eligible for accessing the database or not
+const authorize = async (req, res, next) => {
+    try {
+        if (!await isAuthorized(req)) {
+            return res.status(401).json({msg: 'User not found'});
+        }
         next();
     } catch (error) {
         console.log(error);
@@ -41,24 +55,7 @@ const authorize = async (req, res, next) => {
     }
 };
 
-// * this utility function checks if the request is made by authorized user or not
-const isAuthorized = async (req) => {
-    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
-        return false;
-    }
-    try {
-        const decode = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET_KEY);
-        // check if the user exist on database or not;
-        if ((await userModel.find({mail: decode.id})).length !== 1) {
-            return false;
-        }
-        // res.status(200).json({success: true, msg: 'Authentication successful'});
-        return true;
-    } catch (error) {
-        console.error(error)
-        return false;
-    }
-}
+
 //* the login function will be used to provide the JWT token to any user stored in DB
 const login = async (req, res) => {
     if (!req.body['mail']) {
@@ -75,7 +72,7 @@ const login = async (req, res) => {
             });
         }
         // * here, the mail of user is considered as id of that person. this JWT will expire in giver amount of time in options object
-        const signedJWT = jwt.sign({id: req.body['mail']}, process.env.JWT_SECRET_KEY, {expiresIn: '1h'});
+        const signedJWT = jwt.sign({id: req.body['mail']}, process.env.JWT_SECRET_KEY, {expiresIn: '7d'});
         // send an email with a link href= endpoint?token=signedJWT
 
         // Step 1
@@ -90,8 +87,17 @@ const login = async (req, res) => {
         let mailOptions = {
             from: 'quillthe59@gmail.com',
             to: req.body.mail,
-            subject: 'Nodemailer - Test',
-            html: `<a href="http://${process.env.DOMAIN}/verify/?token=${signedJWT}">Click here to log in</a>`
+            subject: 'Login - The Quill',
+            html: `<a style="
+                display: flex;
+                background-color: #202020;
+                color: #ffffff;
+                text-decoration: none;
+                font-size: 1.3rem;
+                width: fit-content;
+                padding: 0.3rem 1.5rem;
+                border-radius: 100vmax;"
+            href="http://${process.env.DOMAIN}/verify/?token=${signedJWT}">Click here to log in</a>`
         };
 
         transporter.sendMail(mailOptions, function (error, info) {
@@ -120,13 +126,13 @@ const login = async (req, res) => {
 
 // * this utility function gets the authorized user details from the request made by it
 const getUserDetails = async (req) => {
-    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
-        return false;
-    }
     try {
-        const decode = jwt.verify(req.headers.authorization.split(' ')[1], process.env.JWT_SECRET_KEY);
+        const userEMail = await isAuthorized(req);
+        if (!userEMail) {
+            return false;
+        }
         // check if the user exist on database or not;
-        const d = await userModel.findOne({mail: decode.id}).select({'password': 0});
+        const d = await userModel.findOne({mail: userEMail}).select({'password': 0});
         if (d) {
             return d;
         }
@@ -136,7 +142,6 @@ const getUserDetails = async (req) => {
         return false;
     }
 }
-
 
 const linkLogin = async (req, res) => {
     const token = req.query.token || null;
@@ -148,24 +153,16 @@ const linkLogin = async (req, res) => {
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
         const user = await userModel.findOne({mail: decodedToken.id});
         //* unauthorized request
-        if(!user)return res.status(404).send('Unauthorized user');
-        return res.send(`
-        <html lang="en">
-        <body>
-        Authed with mail: ${user.username}
-        <script>
-            const jwt="${token}";
-            localStorage.setItem('token',jwt);
-            location.href="http://${process.env.DOMAIN}/"
-        </script>
-        </body>
-        </html>
-        `);
+        if (!user) return res.status(404).send('<h1>Unauthorized user</h1>');
+        res.cookie('__login_token', token, {
+            maxAge: 60480000 /* in milliseconds (1 week)*/,
+            httpOnly: true
+        });
+        res.redirect('/');// redirect to the dashboard (list view)
     } catch (e) {
         console.log(e);
         return res.send('some error occurred');
     }
-    // res.redirect('/');// redirect to the dashboard (list view)
 }
 
 
