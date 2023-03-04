@@ -18,5 +18,5 @@ router.get('/userProfile/:id', getUserProfilePicture);
 router.get('/comments/:id', fetchComments);
 // * authorized requests
 const authRouter = require('./DBAuth.cjs');
-router.use('/blog', authorize, authRouter);
+router.use('/auth', authorize, authRouter);
 module.exports = router;

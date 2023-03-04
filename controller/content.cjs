@@ -10,7 +10,7 @@ const fs = require("fs");
 const {convertImage} = require("./fileHandle.cjs");
 const getFewBlogs = async (req, res, next) => {
     // send blogs without their content field
-    const LIMIT = req.body.limit || 10;
+    const LIMIT = Number(req.query.limit) || 10;
     try {
         // https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/
         const data = await model.aggregate([{$sample: {size: LIMIT}}])
@@ -34,6 +34,8 @@ const getOneBlog = async (req, res, next) => {
                 await model.findByIdAndUpdate(data._id, {
                     $set: {"meta.views": data.meta.views + 1}
                 }, {timestamps: false});
+                const currentUserId = (await getUserDetails(req))._id.toString();
+                data.starred = data.meta.stargazers.includes(currentUserId);
             }
             return res.status(200).json({success: true, data});
         }
@@ -214,7 +216,8 @@ const likePost = async (req, res) => {
             const newStargazers = d.meta.stargazers.filter(e => e !== userDetails._id.toString());
 
             const data = await model.findByIdAndUpdate(req.params.id, {
-                "meta.likes": d.meta.likes - 1, "meta.stargazers": newStargazers
+                "meta.likes": d.meta.likes - 1,
+                "meta.stargazers": newStargazers
             }, {new: true});
             return res.status(200).json({success: true, meta: data.meta});
         }
@@ -365,9 +368,9 @@ const setProfilePicture = async (req, res, next) => {
     }
 };
 
-// make two different routes to edit password and username
 const editUsername = async (req, res) => {
     try {
+        console.log('abc');
         const id = req.params.id;
 
         // check if the user with id exists or not
@@ -384,9 +387,9 @@ const editUsername = async (req, res) => {
         const updatedObj = {
             username: req.body.username
         }
-        console.log("debug: ", {updatedObj});
-
         const data = await userModel.findByIdAndUpdate(id, updatedObj, {new: true});
+        await model.updateMany({"author.id": user._id.toString()}, {"author.username": req.body.username});
+        await commentsModel.updateMany({"by.id": user._id.toString()}, {"by.uname": req.body.username});
         res.status(200).json({success: true, data});
     } catch (e) {
         res.status(404).json({success: false, msg: e})

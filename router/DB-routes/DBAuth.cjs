@@ -12,11 +12,11 @@ const {upload} = require('../../controller/fileHandle.cjs');
 
 const router = express.Router();
 
-router.post('/create', createBlog);
-router.delete('/delete/:id', deleteBlog);
-router.put('/update/:id', updateBlog);
-router.put('/like/:id', likePost);
-router.post('/comment/create/:id', createComment);
+router.post('/blog/create', createBlog);
+router.delete('/blog/delete/:id', deleteBlog);
+router.put('/blog/update/:id', updateBlog);
+router.put('/blog/like/:id', likePost);
+router.post('/blog/comment/create/:id', createComment);
 router.put('/userProfile', (req, res, next) => {
     upload.single('profileImage')(req, res, (err) => {
         // this function handles the error
