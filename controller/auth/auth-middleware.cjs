@@ -45,7 +45,7 @@ const isAuthorized = async (req) => {
 const authorize = async (req, res, next) => {
     try {
         if (!await isAuthorized(req)) {
-            return res.status(401).json({msg: 'User not found'});
+            return res.status(401).json({msg: 'User is not authorized'});
         }
         next();
     } catch (error) {
