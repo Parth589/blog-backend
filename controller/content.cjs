@@ -14,7 +14,7 @@ const getFewBlogs = async (req, res, next) => {
     try {
         // https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/
         const data = await model.aggregate([{$sample: {size: LIMIT}}])
-            .project({"content.post": 0});// hide the content
+            .project({content: 0});// hide the content
         return res.status(200).json({success: true, data});
     } catch (error) {
         console.log(error);
@@ -39,7 +39,7 @@ const getOneBlog = async (req, res, next) => {
             }
             return res.status(200).json({success: true, data});
         }
-        return res.status(404).json({success: false, data});
+        return res.status(404).json({success: true, data});
     } catch (error) {
         console.log(error);
         next();
@@ -166,7 +166,7 @@ const updateBlog = async (req, res, next) => {
         const a = ['keywords', 'title', 'content', 'thumbnail_link'];
         const newObject = filterObjectsByKey(req.body, a);// user can perform update on these fields
 
-        // validating inputs (* there's no need to validate inputs other than keywords)
+        // validating inputs
         if (!Array.isArray(newObject.keywords)) throw new Error('input validation failed');
 
         if (newObject.content) newObject.content = converter.makeHtml(newObject.content);
@@ -174,9 +174,7 @@ const updateBlog = async (req, res, next) => {
         const data = await model.findByIdAndUpdate(req.params.id, {
             content: {
                 title: newObject.title, post: newObject.content
-            },
-            keywords: newObject.keywords,
-            thumbnail_link: newObject.thumbnail_link
+            }, keywords: newObject.keywords
         }, {new: true});
         if (data) return res.status(200).json({success: true, data});
         return res.status(404).json({success: false, data});
