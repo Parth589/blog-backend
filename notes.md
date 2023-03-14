@@ -31,8 +31,9 @@ request.body = {mail, password, username}
 }
 ```
 
-* the jwt token will be stored into session storage in frontend.
-
+* the jwt token will be stored into cookies in frontend.
+* while making the request to '/login' , client have to pass 'mail' and 'redirect' parameters in 'req.body'. the
+  redirect is a url where client makes the request to '/verify' endpoint with the token passed to it.
 ## todo:
 
 * try to replace data type from String to ObjectId all fields which are storing reference to another objects in DB

@@ -5,8 +5,7 @@
   "main": "index.cjs",
   "scripts": {
     "start": "node index.cjs",
-    "startDB": "sudo systemctl start mongod.service",
-    "startDev": "nodemon index.cjs"
+    "startDev": "systemctl start mongod.service && nodemon index.cjs"
   },
   "author": "",
   "license": "ISC",

@@ -30,7 +30,7 @@ const isAuthorized = async (req) => {
         const passedJWT = req.cookies.__login_token;
         const decode = jwt.verify(passedJWT, process.env.JWT_SECRET_KEY);
         // check if the user exist on database or not;
-        if ((await userModel.find({mail: decode.id})).length !== 1) {// here decode.id stands for the mail in the jwt payload.
+        if (!(await userModel.findById(decode.id))) {// here decode.id stands for the id in the jwt payload.
             return false;
         }
         // res.status(200).json({success: true, msg: 'Authentication successful'});
@@ -45,34 +45,35 @@ const isAuthorized = async (req) => {
 const authorize = async (req, res, next) => {
     try {
         if (!await isAuthorized(req)) {
-            return res.status(401).json({msg: 'User not found'});
+            return res.status(401).json({success: false, msg: 'User is not authorized'});
         }
         next();
     } catch (error) {
         console.log(error);
         console.trace();
-        return res.status(401).json({msg: 'User is not authorized'});
+        return res.status(401).json({success: false, msg: 'User is not authorized'});
     }
 };
 
 
 //* the login function will be used to provide the JWT token to any user stored in DB
 const login = async (req, res) => {
-    if (!req.body['mail']) {
-        return res.status(400).json({msg: 'email is required in order to login'});
+    if (!req.body['mail'] || !req.body['redirect']) {
+        return res.status(400).json({success: false, msg: 'email and redirect URL is required in order to login'});
     }
     try {
         // check if the given mail and password are correct or not
-        const c = await verifyUser(req.body['mail']);
+        const c = await userModel.findOne({mail: req.body['mail']});
         if (!c) {
             // this message is for those who provide invalid emails and try to mess with system
+            console.log('sending fake mail')
             return res.status(200).json({
                 success: true,
                 msg: 'check your email to finish logging in'
             });
         }
         // * here, the mail of user is considered as id of that person. this JWT will expire in giver amount of time in options object
-        const signedJWT = jwt.sign({id: req.body['mail']}, process.env.JWT_SECRET_KEY, {expiresIn: '7d'});
+        const signedJWT = jwt.sign({id: c._id.toString()}, process.env.JWT_SECRET_KEY, {expiresIn: '7d'});
         // send an email with a link href= endpoint?token=signedJWT
 
         // Step 1
@@ -97,7 +98,7 @@ const login = async (req, res) => {
                 width: fit-content;
                 padding: 0.3rem 1.5rem;
                 border-radius: 100vmax;"
-            href="http://${process.env.DOMAIN}/verify/?token=${signedJWT}">Click here to log in</a>`
+            href="${req.body.redirect}?token=${signedJWT}">Click here to log in</a>`
         };
 
         transporter.sendMail(mailOptions, function (error, info) {
@@ -151,14 +152,15 @@ const linkLogin = async (req, res) => {
     }
     try {
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        const user = await userModel.findOne({mail: decodedToken.id});
+        const user = await userModel.findById(decodedToken.id);
         //* unauthorized request
         if (!user) return res.status(404).send('<h1>Unauthorized user</h1>');
-        res.cookie('__login_token', token, {
+        res.cookie('__login_token', token,{
             maxAge: 60480000 /* in milliseconds (1 week)*/,
-            httpOnly: true
+            httpOnly: false
         });
-        res.redirect('/');// redirect to the dashboard (list view)
+        console.log('set up cookies',token);
+        res.json({success: true,data:null});// redirect to the dashboard (list view)
     } catch (e) {
         console.log(e);
         return res.send('some error occurred');
@@ -166,4 +168,4 @@ const linkLogin = async (req, res) => {
 }
 
 
-module.exports = {authorize, login, isAuthorized, getUserDetails, linkLogin};
+module.exports = {authorize, login, isAuthorized, getUserDetails, linkLogin, verifyInputs};

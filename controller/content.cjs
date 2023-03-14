@@ -13,8 +13,8 @@ const getFewBlogs = async (req, res, next) => {
     const LIMIT = Number(req.query.limit) || 10;
     try {
         // https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/
-        const data = await model.aggregate([{$sample: {size: LIMIT}}])
-            .project({content: 0});// hide the content
+        let data = await model.aggregate([{$sample: {size: LIMIT}}])
+            .project({"content.post": 0});// hide the content
         return res.status(200).json({success: true, data});
     } catch (error) {
         console.log(error);
@@ -39,7 +39,7 @@ const getOneBlog = async (req, res, next) => {
             }
             return res.status(200).json({success: true, data});
         }
-        return res.status(404).json({success: true, data});
+        return res.status(404).json({success: false, data});
     } catch (error) {
         console.log(error);
         next();
@@ -54,6 +54,7 @@ const createBlog = async (req, res) => {
         const a = ['keywords', // [String] (* maximum 5)
             'title',    // String
             'content',  // String   (* markdown content)
+            'brief',  // String
             'thumbnail_link',  // String   (* link to the thumbnail image)
         ];
 
@@ -63,6 +64,15 @@ const createBlog = async (req, res) => {
         // validating inputs
         if (!Array.isArray(body.keywords)) throw new Error('input validation failed');
 
+        function readingTime(text) {
+            const wordsPerMinute = 200
+            const noOfWords = text.split(/\s/g).length
+            const minutes = noOfWords / wordsPerMinute
+            return Math.ceil(minutes)
+        }
+
+        // calculating readTime
+        const readTime = readingTime(body.content);
         // translating the markdown content to HTML
         body.content = converter.makeHtml(body.content);
 
@@ -74,13 +84,14 @@ const createBlog = async (req, res) => {
         body.author = {
             username: user.username, id: user._id
         };
+
         const obj = {
             content: {
-                title: body.title, post: body.content
+                title: body.title, post: body.content, brief: body.brief
             },
             keywords: body.keywords,
             author: body.author,
-            meta: {views: 0, likes: 0},
+            meta: {views: 0, likes: 0, readTime},
             thumbnail_link: body.thumbnail_link
         }
         let data = await model.create(obj);
@@ -163,7 +174,7 @@ const updateBlog = async (req, res, next) => {
             return res.status(404).json({success: false, msg: 'can\'t update someone else\'s post'})
         }
 
-        const a = ['keywords', 'title', 'content', 'thumbnail_link'];
+        const a = ['keywords', 'title', 'content', 'thumbnail_link', 'brief'];
         const newObject = filterObjectsByKey(req.body, a);// user can perform update on these fields
 
         // validating inputs
@@ -173,7 +184,7 @@ const updateBlog = async (req, res, next) => {
 
         const data = await model.findByIdAndUpdate(req.params.id, {
             content: {
-                title: newObject.title, post: newObject.content
+                title: newObject.title, post: newObject.content, brief: newObject.brief
             }, keywords: newObject.keywords
         }, {new: true});
         if (data) return res.status(200).json({success: true, data});
@@ -300,6 +311,10 @@ const fetchComments = async (req, res) => {
             // bad request
             return res.status(202).json({success: false, msg: 'invalid object id'})
         }
+        if (!await model.findById(id)) {
+            // bad request
+            return res.status(404).json({success: false, msg: 'Post not found'});
+        }
         const data = await commentsModel.find({of: id, parent});
         return res.status(200).json({success: true, data})
     } catch (e) {
@@ -316,7 +331,7 @@ const getUserProfilePicture = async (req, res, next) => {
         const user = await userModel.findById(id);
 
         const options = {
-            root: path.join(__dirname, '../uploads/')
+            root: path.join(__dirname, '../userProfiles/')
         };
 
         if (!user) return res.status(404).json({success: false, msg: 'User not found'});

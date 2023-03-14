@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const KEYWORD_VALIDATOR = (val) => {
     return (Array.isArray(val) && (val.length <= 5 && val.length >= 1));
 };
-
+const briefValidator = (val) => {
+    return val.length < 100;
+}
 const schema = new mongoose.Schema({
         content: {
             title: {
@@ -14,7 +16,13 @@ const schema = new mongoose.Schema({
             post: {
                 type: String,
                 required: true,
-            }
+            },
+            brief: {
+                type: String,
+                required: true,
+                validate: [briefValidator, "brief content must not exceed 100 characters"]
+
+            },
         },
         keywords: {
             type: [{type: String, trim: true, required: true, lowercase: true}],
@@ -45,6 +53,7 @@ const schema = new mongoose.Schema({
                 type: [{type: String, trim: true}],
                 required: true,
             },
+            readTime:Number
         },
         thumbnail_link: {
             type: String,
