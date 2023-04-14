@@ -15,11 +15,14 @@ if (domain === "ip") {
 }
 
 // * essential middlewares
-app.use(cors());
+app.use(cors({
+    origin:'http://127.0.0.1:5173',
+    credentials: true
+}));
 app.use(express.json()); // to translate JSON data sent from POST request
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
-
+app.use(express.static('public'))
 // * Routers
 const mainRouter = require('./router/mainRouter.cjs');
 app.use('/', mainRouter);

@@ -27,16 +27,21 @@ const getOneBlog = async (req, res, next) => {
     // get a blog by it's id
     try {
         if (!isValidObjectId(req.params.id)) return res.status(400).json({success: false, data: []});
-        const data = await model.findOne({_id: req.params.id});
+        let data = null;
+        if (!req.query.compact) {
+            data = await model.findOne({_id: req.params.id}).lean();
+        } else
+            data = await model.findOne({_id: req.params.id}).select({"content.post": 0});
         if (data) {
             if (await isAuthorized(req)) {
                 // * the view will only be counted if an authorized user requests it
+                console.log(data);
                 await model.findByIdAndUpdate(data._id, {
                     $set: {"meta.views": data.meta.views + 1}
                 }, {timestamps: false});
-                const currentUserId = (await getUserDetails(req))._id.toString();
-                data.starred = data.meta.stargazers.includes(currentUserId);
+
             }
+            data.comments = await commentsModel.find({of: req.params.id,parent: null}); // get only comments of level 0
             return res.status(200).json({success: true, data});
         }
         return res.status(404).json({success: false, data});
@@ -130,27 +135,32 @@ const deleteBlog = async (req, res, next) => {
 const searchBlog = async (req, res, next) => {
     // Search blogs using their keywords, title or author (multiple fields also can be specified)
     try {
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 20;
-        let fullObject = Boolean(req.query['fullObject']);
         const searchTerm = String(req.query['searchTerm']);
+        const searchField = String(req.query['searchField']);
         const q = searchTerm.split(' ').map(e => {
             return new RegExp(e, 'i');
         });
-
-        if (fullObject) {
-            const data = await model.find({
-                $or: [{keywords: {$in: q}}, {title: {$in: q}}, {author: {$in: q}}]
-            })
-                .skip((page - 1) * limit).limit(limit);
-            if (data) return res.status(200).json({success: true, data});
-            return res.status(404).json({success: false, data});
-        } else {
-            const data = await model.find({$or: [{keywords: {$in: q}}, {"content.title": {$in: q}}, {"author.username": {$in: q}}]}, {"content.post": 0})
-                .skip((page - 1) * limit).limit(limit);
-            if (data) return res.status(200).json({success: true, data});
-            return res.status(404).json({success: false, data});
+        let data = null;
+        console.log({q,searchField})
+        switch (searchField) {
+            case 'author': {
+                data = await model.find({"author.username": searchTerm}, {"content.post": 0})
+                break
+            }
+            case 'title': {
+                data = await model.find({"content.title": searchTerm}, {"content.post": 0})
+                break
+            }
+            case 'keyword': {
+                data = await model.find({$or: [{keywords: {$in: q}}]}, {"content.post": 0})
+                break
+            }
+            default: {
+                data = await model.find({$or: [{keywords: {$in: q}}, {"content.title": {$in: q}}, {"author.username": {$in: q}}]}, {"content.post": 0})
+            }
         }
+        if (data) return res.status(200).json({success: true, data});
+        return res.status(404).json({success: false, data});
     } catch (error) {
         console.log(error);
         next();
@@ -341,7 +351,6 @@ const getUserProfilePicture = async (req, res, next) => {
             fs.accessSync(path.join(options.root, filename));
             doFileExist = true;
         } catch (err) {
-            console.log('debug:' + err)
             doFileExist = false;
         }
         if (doFileExist) return res.sendFile(filename, options);
@@ -385,7 +394,6 @@ const setProfilePicture = async (req, res, next) => {
 
 const editUsername = async (req, res) => {
     try {
-        console.log('abc');
         const id = req.params.id;
 
         // check if the user with id exists or not
@@ -395,7 +403,6 @@ const editUsername = async (req, res) => {
             return res.status(404).json({success: false, msg: 'Cant find the user'});
         }
         const rUser = await userModel.findById(id);
-        console.log({rUser, user});
         if (rUser._id.toString() !== user._id.toString()) {
             return res.status(404).json({success: false, msg: 'The user id\'s didn\'t match'});
         }

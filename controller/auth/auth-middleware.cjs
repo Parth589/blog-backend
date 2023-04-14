@@ -128,12 +128,12 @@ const login = async (req, res) => {
 // * this utility function gets the authorized user details from the request made by it
 const getUserDetails = async (req) => {
     try {
-        const userEMail = await isAuthorized(req);
-        if (!userEMail) {
+        const userID = await isAuthorized(req);
+        if (!userID) {
             return false;
         }
         // check if the user exist on database or not;
-        const d = await userModel.findOne({mail: userEMail}).select({'password': 0});
+        const d = await userModel.findById(userID).select({'password': 0});
         if (d) {
             return d;
         }
@@ -155,17 +155,20 @@ const linkLogin = async (req, res) => {
         const user = await userModel.findById(decodedToken.id);
         //* unauthorized request
         if (!user) return res.status(404).send('<h1>Unauthorized user</h1>');
-        res.cookie('__login_token', token,{
+        res.cookie('__login_token', token, {
             maxAge: 60480000 /* in milliseconds (1 week)*/,
-            httpOnly: false
+            httpOnly: false,
+            sameSite: 'STRICT'
         });
-        console.log('set up cookies',token);
-        res.json({success: true,data:null});// redirect to the dashboard (list view)
+        res.json({success: true, data: null});// redirect to the dashboard (list view)
     } catch (e) {
         console.log(e);
         return res.send('some error occurred');
     }
 }
 
-
-module.exports = {authorize, login, isAuthorized, getUserDetails, linkLogin, verifyInputs};
+const logout = async (req, res) => {
+    res.clearCookie('__login_token');
+    res.end();
+}
+module.exports = {authorize, login, isAuthorized, getUserDetails, linkLogin, verifyInputs, logout};
